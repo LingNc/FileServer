@@ -6,5 +6,8 @@
 !include/**
 !install.sh
 !service/**
-!src/zerofile.cpp
+
+!src/FileServer.cpp
+!src/config.json
+
 !README.md

@@ -7,8 +7,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # 定义源文件和目标文件
-SOURCE_FILE="zerofile.cpp"
-TARGET_FILE="zerofile"
+SOURCE_FILE="src/FileServer.cpp"
+TARGET_FILE="src/FileServer"
 
 # 检查源文件是否存在
 if [ ! -f "$SOURCE_FILE" ]; then
