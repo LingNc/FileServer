@@ -1,0 +1,60 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          zerofile
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start zerofile at boot time
+# Description:       Enable service provided by zerofile.
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/opt/zerofile/zerofile
+NAME=zerofile
+DESC="zerofile"
+ADMIN_PASSWORD=/opt/zerofile/config/admin.key
+
+test -x $DAEMON || exit 0
+test -x $CHANGE_PASSWORD_SCRIPT || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $DESC" "$NAME"
+    start-stop-daemon --start --quiet --exec $DAEMON
+    log_end_msg $?
+    ;;
+  stop)
+    log_daemon_msg "Stopping $DESC" "$NAME"
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --exec $DAEMON
+    log_end_msg $?
+    ;;
+  restart|force-reload)
+    $0 stop
+    $0 start
+    ;;
+  status)
+    status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+    ;;
+  passwd)
+    # 检查文件是否存在
+    if [ ! -f "ADMIN_PASSWORD" ]; then
+        echo "文件 $ADMIN_PASSWORD 不存在"
+        exit 1
+    fi
+
+    # 读取文件内容
+    ADMIN_KEY=$(cat ADMIN_PASSWORD)
+    log_daemon_msg "Changing password for $DESC" "$NAME"
+    curl -X POST -d "auth_key=$ADMIN_KEY" http://localhost:3001/passwd
+    log_end_msg $?
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|force-reload|status|passwd <admin_key>}"
+    exit 1
+    ;;
+esac
+
+exit 0

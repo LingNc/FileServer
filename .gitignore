@@ -1,0 +1,10 @@
+//白名单
+*
+!*/
+// 开始
+!**/.gitignore
+!include/**
+!install.sh
+!service/**
+!src/zerofile.cpp
+!README.md

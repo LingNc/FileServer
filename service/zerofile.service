@@ -1,0 +1,15 @@
+[Unit]
+Description=zerofile service
+After=network.target
+
+[Service]
+ExecStart=/opt/zerofile/zerofile
+Restart=always
+User=zerotier-one
+Group=nogroup
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=ADMIN_PASSWORD=/opt/zerofile/config/admin.key
+WorkingDirectory=/opt/zerofile
+
+[Install]
+WantedBy=multi-user.target
