@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "json.hpp"
-#include "yaml.h"
+#include "yaml.hpp"
 
 namespace yamjson{
 

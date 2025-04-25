@@ -1,4 +1,4 @@
-#include "yam_to_json.h"
+#include "yaml_to_json.h"
 #include <stdexcept>
 
 namespace yamjson {
