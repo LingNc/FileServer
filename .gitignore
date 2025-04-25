@@ -1,13 +1,19 @@
-//白名单
+# 白名单
 *
 !*/
-// 开始
+
+# 开始
 !**/.gitignore
+!module/*
+
 !include/**
 !install.sh
 !service/**
 
 !src/FileServer.cpp
 !src/config.json
+!src/main.cpp
 
+!FileServer.code-workspace
+!Makefile
 !README.md

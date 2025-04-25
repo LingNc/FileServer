@@ -6,7 +6,9 @@
 #include <random>
 #include <sstream>
 // #include <algorithm>
-#include "../include/myinclude.h"
+#include"httplib.h"
+#include"json.hpp"
+#include"loglib.hpp"
 namespace fs=std::filesystem;
 using json=nlohmann::json;
 

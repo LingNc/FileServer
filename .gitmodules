@@ -1,0 +1,3 @@
+[submodule "module/loglib"]
+	path = module/loglib
+	url = https://github.com/LingNc/loglib-cpp.git
