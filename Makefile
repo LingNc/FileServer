@@ -103,7 +103,17 @@ clean-yaml :
 	fi
 	@echo "YAML 构建文件清理完成！"
 
-# 完全清理 yaml（删除仓库）
+# 清理yaml构建缓存
+.PHONY : clean-yaml-temp
+clean-yaml-temp :
+	@echo "正在清理 YAML 临时构建文件..."
+	@if [ -d "temp" ]; then \
+		rm -rf temp; \
+		echo "已删除临时构建目录"; \
+	fi
+	@echo "YAML 临时构建文件清理完成！"
+
+# 清理 yaml 仓库
 .PHONY : clean-yaml-git
 clean-yaml-git :
 	@echo "正在清理 YAML 仓库..."
