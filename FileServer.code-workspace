@@ -11,6 +11,12 @@
 				"binaryPath": "/home/lingnc/FileServer/main",
 				"binaryArgs": []
 			}
-		]
+		],
+		"files.associations": {
+			"*.vue": "vue",
+			".clangd": "yaml",
+			"*.cfg": "ini",
+			"iostream": "cpp"
+		}
 	}
 }

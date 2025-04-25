@@ -5,15 +5,17 @@
 # 开始
 !**/.gitignore
 !module/*
+!build_yaml/*.*
 
 !include/**
+!ext/**
 !install.sh
 !service/**
 
-!src/FileServer.cpp
-!src/config.json
-!src/main.cpp
+!src/*.cpp
+!config/config.yaml
 
 !FileServer.code-workspace
 !Makefile
+!LICENSE
 !README.md
