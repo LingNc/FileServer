@@ -3,7 +3,7 @@ Cpp = g++
 Cpp_flags = -std=c++17 -Wall -Wextra -g -D_GLIBCXX_DEBUG
 
 # 源文件和目标文件
-Src = src/main.cpp src/yaml_to_json.cpp src/yaml_json_demo.cpp
+Src = src/main.cpp src/yaml_to_json.cpp
 Obj = $(patsubst src/%.cpp,build/%.o,$(Src))
 
 # YAML 相关配置
@@ -21,10 +21,13 @@ Include = include
 Ext = ext
 Lib_dir = lib
 
-# 如果没有创建就创建build
+# 如果没有创建就创建build和example目录
 $(shell mkdir -p build)
 $(shell mkdir -p $(Ext))
 $(shell mkdir -p $(Lib_dir))
+$(shell mkdir -p example)
+
+# ====== main 主程序构建 ======
 
 # 构建 main
 main : $(Obj) | link check-yaml
@@ -49,6 +52,8 @@ link :
 	else \
 		echo "链接已存在，跳过创建"; \
 	fi
+
+# ====== yaml 库构建 ======
 
 # 检查 yaml.hpp 或者 yaml-cpp.hpp 是否存在
 .PHONY : check-yaml
@@ -134,6 +139,30 @@ clean-yaml-git :
 		@echo "YAML 仓库清理完成！"
 	fi
 
+# ======示例程序======
+
+# yaml_to_json 目标文件（单独定义，用于示例程序）
+Yaml_to_json_obj = build/yaml_to_json.o
+
+# 示例程序
+Example_src = example/yaml_json_example.cpp
+Example_target = example/yaml_json_example
+
+# 编译示例程序（依赖yaml_to_json的目标文件）
+.PHONY : example
+example : $(Yaml_to_json_obj) check-yaml
+	@echo "正在编译YAML-JSON示例程序..."
+	$(Cpp) $(Cpp_flags) -o $(Example_target) $(Example_src) $(Yaml_to_json_obj) $(Lib) -I$(Include) -I$(Ext)
+	@echo "示例程序编译完成！可以通过 ./$(Example_target) 运行"
+
+# 运行示例程序
+.PHONY : run-example
+run-example : example
+	@echo "正在运行YAML-JSON示例程序..."
+	./$(Example_target)
+
+# ====== 其他内容 ======
+
 # make help
 # 显示帮助信息
 .PHONY : help
@@ -141,6 +170,8 @@ help :
 	@echo "FileServer Makefile 帮助"
 	@echo "------------------------"
 	@echo "make          - 构建主程序"
+	@echo "make example  - 构建YAML-JSON示例程序"
+	@echo "make run-example - 运行YAML-JSON示例程序"
 	@echo "make clean    - 清理构建文件"
 	@echo "make clean-all- 清理所有文件，包括YAML库"
 	@echo "make yaml_header - 仅生成yaml.hpp单头文件"
@@ -153,7 +184,7 @@ help :
 .PHONY : clean
 clean :
 	@echo "正在清理..."
-	rm -f build/*.o main
+	rm -f build/*.o main $(Example_target) example/*.yaml
 	clean-yaml-git
 	@echo "清理完成！"
 

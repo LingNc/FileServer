@@ -9,6 +9,7 @@
 
 !include/**
 !ext/**
+!example/*.cpp
 !lib/*.a
 !install.sh
 !service/**
