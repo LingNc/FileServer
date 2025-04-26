@@ -14,10 +14,18 @@ LIB_DIR="lib"                     # 库文件目录（存放静态库）
 # 文件名配置
 HEADER_FILE="yaml.hpp"           # 合并后的头文件名
 LIB_FILE="libyaml.a"             # 静态库文件名
+DEBUG_LIB_FILE="libyaml-debug.a" # 调试版静态库文件名
 
 # 构建配置
 YAML_BUILD="${YAML_SRC}/build"    # 构建目录
+YAML_DEBUG_BUILD="${YAML_SRC}/build-debug" # 调试版构建目录
 YAML_LIB="libyaml-cpp.a"          # 构建生成的原始静态库名
+
+# 检查是否需要构建调试版本
+BUILD_DEBUG=true
+if [ "$1" == "--no-debug" ]; then
+    BUILD_DEBUG=false
+fi
 
 # 获取构建信息
 BUILD_DATE=$(date "+%Y-%m-%d %H:%M:%S")
@@ -50,6 +58,9 @@ echo "===== 开始构建 yaml-cpp 头文件和静态库 ====="
 echo "源码目录: ${YAML_SRC}"
 echo "头文件输出: ${EXT_DIR}/${HEADER_FILE}"
 echo "静态库输出: ${LIB_DIR}/${LIB_FILE}"
+if [ "$BUILD_DEBUG" = true ]; then
+    echo "调试版静态库输出: ${LIB_DIR}/${DEBUG_LIB_FILE}"
+fi
 echo "版本: ${VERSION} (原版 YAML-CPP: ${YAML_VERSION})"
 echo "构建日期: ${BUILD_DATE}"
 echo "构建系统: ${BUILD_OS}"
@@ -187,7 +198,7 @@ echo "已生成合并头文件: $OUT"
 echo "检查未能展开的 include:"
 grep -n "未找到" "$OUT" || echo "全部头文件展开成功!"
 
-# 第2步：编译静态库
+# 第2步：编译标准静态库
 echo "===== 开始编译 yaml-cpp 静态库 ====="
 mkdir -p ${YAML_BUILD}
 cd ${YAML_BUILD}
@@ -205,7 +216,32 @@ cd ../..
 echo "复制静态库到 ${LIB_DIR}/${LIB_FILE}..."
 cp "${YAML_BUILD}/${YAML_LIB}" "${LIB_DIR}/${LIB_FILE}"
 
+# 第3步：如果需要，编译调试版静态库
+if [ "$BUILD_DEBUG" = true ]; then
+    echo "===== 开始编译 yaml-cpp 调试版静态库 ====="
+    mkdir -p ${YAML_DEBUG_BUILD}
+    cd ${YAML_DEBUG_BUILD}
+
+    # 配置构建（启用调试标志）
+    echo "配置 CMake 调试版构建..."
+    cmake -DYAML_BUILD_SHARED_LIBS=OFF -DYAML_CPP_BUILD_TESTS=OFF -DYAML_CPP_BUILD_TOOLS=OFF -DCMAKE_CXX_FLAGS="-D_GLIBCXX_DEBUG" ..
+
+    # 编译库
+    echo "编译 yaml-cpp 调试版静态库..."
+    make -j$(nproc)
+
+    # 复制静态库到 lib 目录
+    cd ../..
+    echo "复制调试版静态库到 ${LIB_DIR}/${DEBUG_LIB_FILE}..."
+    cp "${YAML_DEBUG_BUILD}/${YAML_LIB}" "${LIB_DIR}/${DEBUG_LIB_FILE}"
+fi
+
 echo "===== 构建完成 ====="
 echo "头文件: ${EXT_DIR}/${HEADER_FILE}"
 echo "静态库: ${LIB_DIR}/${LIB_FILE}"
-echo "使用方法: #include \"${HEADER_FILE}\" 并链接 ${LIB_FILE}"
+if [ "$BUILD_DEBUG" = true ]; then
+    echo "调试版静态库: ${LIB_DIR}/${DEBUG_LIB_FILE}"
+    echo "使用方法: #include \"${HEADER_FILE}\" 并链接 ${LIB_FILE} (普通版) 或 ${DEBUG_LIB_FILE} (调试版)"
+else
+    echo "使用方法: #include \"${HEADER_FILE}\" 并链接 ${LIB_FILE}"
+fi

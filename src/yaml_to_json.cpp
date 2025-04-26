@@ -3,7 +3,7 @@
 #include <regex>
 #include <sstream>
 #include <fstream>
-
+#include <iostream>
 namespace yamjson {
 
 // YAML 转 JSON 的核心递归转换函数
@@ -126,9 +126,26 @@ std::string json_to_yaml(const nlohmann::json &j){
 YamlDocument::YamlDocument(const std::string& yaml_content) : original_yaml_(yaml_content) {
     // 解析YAML为JSON
     try {
+        // 先尝试验证YAML是否可以解析
+        try {
+            YAML::Node testNode = YAML::Load(yaml_content);
+            // 如果能解析，继续正常流程
+        } catch (const YAML::Exception& e) {
+            std::cerr << "YAML解析警告（构造函数）: " << e.what() << std::endl;
+            // 为了避免段错误，使用一个空的JSON对象初始化
+            json_data_ = nlohmann::json::object();
+            return; // 提前退出构造函数
+        }
+
+        // 正常流程：解析为JSON
         json_data_ = yaml_to_json(yaml_content);
     } catch (const std::exception& e) {
-        throw std::runtime_error(std::string("无法解析YAML文档: ") + e.what());
+        std::cerr << "初始化错误: " << e.what() << std::endl;
+        // 使用空JSON对象初始化，避免未初始化的对象
+        json_data_ = nlohmann::json::object();
+    } catch (...) {
+        std::cerr << "未知初始化错误" << std::endl;
+        json_data_ = nlohmann::json::object();
     }
 }
 
@@ -138,8 +155,20 @@ std::string YamlDocument::dump() const {
         return json_to_yaml(json_data_);
     }
 
-    // 解析原始YAML文档结构
-    YAML::Node original_node = YAML::Load(original_yaml_);
+    // 安全解析原始YAML文档结构
+    YAML::Node original_node;
+    try {
+        original_node = YAML::Load(original_yaml_);
+    }
+    catch (const YAML::Exception& e) {
+        std::cerr << "YAML解析警告（dump方法）: " << e.what() << std::endl;
+        // 如果原始YAML解析失败，回退到无注释版本
+        return json_to_yaml(json_data_);
+    }
+    catch (...) {
+        std::cerr << "YAML解析未知错误（dump方法）" << std::endl;
+        return json_to_yaml(json_data_);
+    }
 
     // 创建YAML解析器保留原始注释
     try {
@@ -213,8 +242,15 @@ std::string YamlDocument::dump() const {
         }
 
         return final_result;
-    } catch (const std::exception& e) {
+    } catch (const YAML::Exception& e) {
+        std::cerr << "YAML处理警告: " << e.what() << std::endl;
         // 如果出错，回退到不保留注释的方法
+        return json_to_yaml(json_data_);
+    } catch (const std::exception& e) {
+        std::cerr << "处理错误: " << e.what() << std::endl;
+        return json_to_yaml(json_data_);
+    } catch (...) {
+        std::cerr << "未知错误" << std::endl;
         return json_to_yaml(json_data_);
     }
 }

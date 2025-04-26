@@ -1,6 +1,6 @@
 // Auto-generated amalgamated yaml-cpp header-only file
 // 版本: 1.0.0 (原版 YAML-CPP: 0.8.0)
-// 构建日期: 2025-04-26 01:57:52
+// 构建日期: 2025-04-26 14:40:08
 // 构建系统: Linux LingNc 5.15.167.4-microsoft-standard-WSL2 #1 SMP Tue Nov 5 00:21:55 UTC 2024 x86_64 GNU/Linux
 // 注意: 此文件只包含头文件，需要配合 libyaml.a 静态库使用
 #pragma once

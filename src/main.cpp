@@ -9,13 +9,17 @@
 #include"httplib.h"
 #include"json.hpp"
 #include"loglib.hpp"
+#include"yaml_to_json.h" // 使用封装后的YAML和JSON互转库
+
+// 声明示例函数
+int yaml_json_demo();
+
 namespace fs=std::filesystem;
 using json=nlohmann::json;
 
 //日志
-Log console;
+loglib::Log console;
 //配置文件
-std::ifstream config_file("./config.json");
 json config;
 
 std::string DIST_PATH="./dist";
@@ -54,9 +58,10 @@ std::string generateSecretKey(size_t length=16){
     for(size_t i=0; i<length; ++i){
         ss<<std::hex<<std::setw(2)<<std::setfill('0')<<dis(gen);
     }
-
     return ss.str();
 }
+
+
 
 void writeSecretKeyToFile(const std::string &secretKey,std::string FILE_PATH,std::string LOG_NAME){
     std::ofstream file(FILE_PATH);
@@ -64,10 +69,10 @@ void writeSecretKeyToFile(const std::string &secretKey,std::string FILE_PATH,std
     if(file.is_open()){
         file<<secretKey;
         file.close();
-        console.log(Log::INFO,LOG_NAME+" 写入 "+SECRET_KEY_PATH);
+        console.log(LOG_NAME+" 写入 "+SECRET_KEY_PATH);
     }
     else{
-        console.log(Log::ERROR,LOG_NAME+" 写入文件时发生错误，可能是文件夹不存在，或者权限问题。");
+        console.log(LOG_NAME+" 写入文件时发生错误，可能是文件夹不存在，或者权限问题。",loglib::ERROR);
     }
 }
 
@@ -89,7 +94,7 @@ std::string getContentType(const std::string &ext){
 }
 
 void print_addr(const httplib::Request &req){
-    console.log(Log::INFO,"来自 "+req.remote_addr+" 的请求：");
+    console.log("来自 "+req.remote_addr+" 的请求：");
 }
 
 void handleRequest(const httplib::Request &req,httplib::Response &res,const std::string &secretKey){
@@ -139,12 +144,29 @@ void handleControlRequest(const httplib::Request &req,httplib::Response &res,std
 
     res.status=200;
     res.set_content("密钥已更新，请使用: http://lingnc.top:3002/planet?key="+newSecretKey+" 来访问文件\n","text/html; charset=utf-8");
-    console.log(Log::INFO,"密钥已更新，新密钥为: "+newSecretKey);
+    console.log("密钥已更新，新密钥为: "+newSecretKey);
 }
 //初始化
 void init(){
     //初始化配置文件
-    config_file>>config;
+    try {
+        std::string config_content;
+        std::ifstream config_file("./config/config.yaml");
+        if (config_file.is_open()) {
+            std::stringstream buffer;
+            buffer << config_file.rdbuf();
+            config_content = buffer.str();
+            config_file.close();
+
+            // 使用新的 ADL 机制接口从 YAML 字符串解析为 JSON
+            nlohmann::from_yaml(config_content, config);
+            console.log("配置文件解析成功");
+        } else {
+            console.log("配置文件打开失败", loglib::ERROR);
+        }
+    } catch (const std::exception& e) {
+        console.log("配置文件解析错误: " + std::string(e.what()), loglib::ERROR);
+    }
 
     DIST_PATH=config["dist_path"];
     CONFIG_PATH=config["config_path"];
@@ -158,24 +180,27 @@ void init(){
     //初始化文件夹
     if(!fs::exists(CONFIG_PATH)&&!fs::exists(DIST_PATH))
         if(fs::create_directory(CONFIG_PATH)&&fs::create_directory(DIST_PATH))
-            console.log(Log::INFO,"初始化文件夹成功");
+            console.log("初始化文件夹成功");
         else
-            console.log(Log::ERROR,"初始化文件夹失败");
+            console.log("初始化文件夹失败",loglib::ERROR);
     //初始化密码
     if(readFileContent(SECRET_KEY_PATH)==""){
-        console.log(Log::WARNING,"密钥文件不存在，正在生成...");
+        console.log("密钥文件不存在，正在生成...",loglib::WARNING);
         auto secretKey=generateSecretKey();
         writeSecretKeyToFile(secretKey,SECRET_KEY_PATH,"Secret Key");
     }
     if(readFileContent(ADMIN_KEY_PATH)==""){
-        console.log(Log::WARNING,"管理员密钥文件不存在，正在生成...");
+        console.log("管理员密钥文件不存在，正在生成...",loglib::WARNING);
         auto AdminKey=generateSecretKey();
         writeSecretKeyToFile(AdminKey,ADMIN_KEY_PATH,"Admin Key");
     }
 }
-int main(){
-    init();
 
+int main(){
+    // 可选：运行YAML和JSON互转示例
+    // yaml_json_demo();
+
+    init();
     std::string secretKey=readFileContent(SECRET_KEY_PATH);
 
     httplib::Server svr;
@@ -189,8 +214,8 @@ int main(){
         handleControlRequest(req,res,secretKey);
         });
 
-    console.log(Log::INFO,"服务运行在 http://"+ADDRESS+"/file?key="+secretKey);
-    console.log(Log::INFO,"请输入文件名替代file");
+    console.log("服务运行在 http://"+ADDRESS+"/file?key="+secretKey);
+    console.log("请输入文件名替代file");
     svr.listen(IP,std::stod(PORT));
 
     return 0;

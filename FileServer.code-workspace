@@ -10,13 +10,145 @@
 				"cwd": "/home/lingnc/FileServer",
 				"binaryPath": "/home/lingnc/FileServer/main",
 				"binaryArgs": []
+			},
+			{
+				"cwd": "/home/lingnc/FileServer",
+				"binaryPath": "/home/lingnc/FileServer/main-release",
+				"binaryArgs": []
 			}
 		],
 		"files.associations": {
 			"*.vue": "vue",
 			".clangd": "yaml",
 			"*.cfg": "ini",
-			"iostream": "cpp"
+			"iostream": "cpp",
+			"stdexcept": "cpp",
+			"fstream": "cpp"
 		}
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "FileServer (开发版)",
+				"command": "make",
+				"type": "shell",
+				"args": ["main"],
+				"problemMatcher": [
+					"$tsc"
+				],
+				"presentation": {
+					"reveal": "always"
+				},
+				"group": "build"
+			},
+			{
+				"label": "FileServer (生产版)",
+				"command": "make",
+				"type": "shell",
+				"args": ["main-release"],
+				"problemMatcher": [
+					"$tsc"
+				],
+				"presentation": {
+					"reveal": "always"
+				},
+				"group": "build"
+			},
+			{
+				"label": "Build Example",
+				"command": "make",
+				"type": "shell",
+				"args": ["example"],
+				"problemMatcher": [
+					"$tsc"
+				],
+				"presentation": {
+					"reveal": "always"
+				},
+				"group": "build"
+			}
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "调试主程序(开发版)",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder}/main",
+				"args": [],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder}",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [
+					{
+						"description": "为 gdb 启用整齐打印",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					},
+					{
+						"description": "加载nlohmann-json美化输出脚本",
+						"text": "source ${workspaceFolder}/tools/nlohmann-json.py",
+						"ignoreFailures": true
+					}
+				],
+				"preLaunchTask": "FileServer (开发版)"
+			},
+			{
+				"name": "运行主程序(生产版)",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder}/main-release",
+				"args": [],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder}",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [
+					{
+						"description": "为 gdb 启用整齐打印",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					},
+					{
+						"description": "加载nlohmann-json美化输出脚本",
+						"text": "source ${workspaceFolder}/tools/nlohmann-json.py",
+						"ignoreFailures": true
+					}
+				],
+				"preLaunchTask": "FileServer (生产版)"
+			},
+			{
+				"name": "调试示例程序(YAML-JSON)",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder}/example/yaml_json_example",
+				"args": [],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder}",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [
+					{
+						"description": "为 gdb 启用整齐打印",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					},
+					{
+						"description": "加载nlohmann-json美化输出脚本",
+						"text": "source ${workspaceFolder}/tools/nlohmann-json.py",
+						"ignoreFailures": true
+					}
+				],
+				"preLaunchTask": "Build Example"
+			}
+		],
+		"compounds": []
 	}
 }
