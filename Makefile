@@ -3,7 +3,7 @@ Cpp = g++
 Cpp_flags = -std=c++17 -Wall -Wextra -g -D_GLIBCXX_DEBUG
 
 # 源文件和目标文件
-Src = src/main.cpp src/yaml_to_json.cpp
+Src = src/main.cpp src/yaml_to_json.cpp src/yaml_json_demo.cpp
 Obj = $(patsubst src/%.cpp,build/%.o,$(Src))
 
 # YAML 相关配置
@@ -27,7 +27,7 @@ $(shell mkdir -p $(Ext))
 $(shell mkdir -p $(Lib_dir))
 
 # 构建 main
-main : $(Obj) | link
+main : $(Obj) | link check-yaml
 	@echo "正在链接..."
 	$(Cpp) $(Cpp_flags) -o $@ $^ $(Lib)
 	@echo "构建完成！"
@@ -42,12 +42,23 @@ build/%.o : src/%.cpp
 # 复制子模块的头文件到include位置
 .PHONY : link
 link :
-	@echo "正在链接库文件..."
-	@if [ ! -e ./$(Include)/loglib.hpp ]; then \
-		ln -s ../module/loglib/loglib.hpp ./$(Include)/loglib.hpp; \
+	@echo "检查模块loglib库是否链接..."
+	@if [ ! -e ./$(Ext)/loglib.hpp ]; then \
+		ln -s ../module/loglib/loglib.hpp ./$(Ext)/loglib.hpp; \
 		echo "链接创建完成！"; \
 	else \
 		echo "链接已存在，跳过创建"; \
+	fi
+
+# 检查 yaml.hpp 或者 yaml-cpp.hpp 是否存在
+.PHONY : check-yaml
+check-yaml :
+	@echo "检查YAML库文件是否存在..."
+	@if [ ! -f "$(Ext)/yaml.hpp" ] && [ ! -f "$(Ext)/yaml-cpp.hpp" ]; then \
+		echo "YAML头文件不存在，需要生成"; \
+		$(MAKE) yaml_header; \
+	else \
+		echo "YAML头文件已存在，跳过生成"; \
 	fi
 
 # 检查 yaml-cpp 仓库是否存在，不存在则下载
@@ -120,8 +131,23 @@ clean-yaml-git :
 	@if [ -d "$(YAML_REPO)" ]; then \
 		rm -rf $(YAML_REPO); \
 		echo "已删除 $(YAML_REPO) 仓库"; \
+		@echo "YAML 仓库清理完成！"
 	fi
-	@echo "YAML 仓库清理完成！"
+
+# make help
+# 显示帮助信息
+.PHONY : help
+help :
+	@echo "FileServer Makefile 帮助"
+	@echo "------------------------"
+	@echo "make          - 构建主程序"
+	@echo "make clean    - 清理构建文件"
+	@echo "make clean-all- 清理所有文件，包括YAML库"
+	@echo "make yaml_header - 仅生成yaml.hpp单头文件"
+	@echo "make yaml_all    - 生成yaml-cpp.hpp全合并版"
+	@echo "make clean-yaml  - 清理YAML构建文件"
+	@echo "make clean-yaml-git - 清理YAML仓库"
+	@echo "make help     - 显示此帮助信息"
 
 # 清理
 .PHONY : clean
