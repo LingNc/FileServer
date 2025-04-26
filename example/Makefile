@@ -21,18 +21,21 @@ Example_target = yaml_json_example
 
 # 默认目标：编译所有示例
 .PHONY : all
-all : example
+all : $(Example_target)
 
 # 编译主要示例程序（依赖yaml_to_json的目标文件）
-.PHONY : example
-example :
+$(Example_target): $(Example_src) $(Yaml_to_json_obj)
 	@echo "正在编译YAML-JSON示例程序(合并单头文件版)..."
-	$(Cpp) $(Cpp_flags) $(YAML_FLAGS) -o $(Example_target) $(Example_src) $(Yaml_to_json_obj) -I$(Include_dir) -I$(Ext_dir)
-	@echo "示例程序编译完成！可以通过 ./$(Example_target) 运行"
+	$(Cpp) $(Cpp_flags) $(YAML_FLAGS) -o $@ $< $(Yaml_to_json_obj) -I$(Include_dir) -I$(Ext_dir)
+	@echo "示例程序编译完成！可以通过 ./$@ 运行"
+
+# 为了兼容性保留旧的示例目标
+.PHONY : example
+example : $(Example_target)
 
 # 运行示例程序
 .PHONY : run-example
-run-example : example
+run-example : $(Example_target)
 	@echo "正在运行YAML-JSON示例程序..."
 	./$(Example_target)
 
