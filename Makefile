@@ -1,6 +1,6 @@
 # 编译器设置
 Cpp = g++
-Cpp_flags = -std=c++17 -Wall -Wextra -g  # 开发环境编译选项
+Cpp_flags = -std=c++17 -Wall -Wextra -g -D_GLIBCXX_DEBUG # 开发环境编译选项
 Cpp_flags_release = -std=c++17 -Wall -Wextra -O3 -DNDEBUG  # 生产环境编译选项
 
 # 源文件和目标文件
@@ -25,15 +25,15 @@ $(shell mkdir -p example)
 # ====== main 主程序构建 ======
 
 # 构建 main（开发版本，带调试功能）
-main : $(Obj) | link check-yaml
+main : $(Obj) | linklog check-yaml-debug
 	@echo "正在链接开发版本（带调试功能）..."
-	$(Cpp) $(Cpp_flags) -o $@ $^
+	$(Cpp) $(Cpp_flags) -o $@ $^ -L$(Lib_dir) -lyaml-debug
 	@echo "开发版本构建完成！"
 
 # 构建 main-release（生产版本，优化性能）
-main-release : $(Obj_release) | link check-yaml
+main-release : $(Obj_release) | linklog check-yaml-release
 	@echo "正在链接生产版本（优化性能）..."
-	$(Cpp) $(Cpp_flags_release) -o $@ $^
+	$(Cpp) $(Cpp_flags_release) -o $@ $^ -L$(Lib_dir) -lyaml
 	@echo "生产版本构建完成！"
 
 # 通用规则：编译所有源文件（开发版本）
@@ -64,9 +64,11 @@ build/%_release.o : src/%.cpp
 # 	$(Cpp) $(Cpp_flags_release) -c $< -o $@ -I$(Include) -I$(Ext)
 # 	@echo "编译完成 $@ ！"
 
+# ====== loglib 库链接 ======
+
 # 复制子模块的头文件到include位置
-.PHONY : link
-link :
+.PHONY : linklog
+linklog :
 	@echo "检查模块loglib库是否链接..."
 	@if [ ! -e ./$(Ext)/loglib.hpp ]; then \
 		ln -s ../module/loglib/loglib.hpp ./$(Ext)/loglib.hpp; \
@@ -77,34 +79,83 @@ link :
 
 # ====== yaml 库检查和构建 ======
 
-# 检查 yaml-cpp.hpp 是否存在（合并单头文件版）
-.PHONY : check-yaml
-check-yaml :
-	@echo "检查YAML合并单头文件是否存在..."
-	@if [ ! -f "$(Ext)/yaml-cpp.hpp" ]; then \
-		echo "YAML合并单头文件不存在，需要生成"; \
-		$(MAKE) yaml_all; \
+# YAML库文件路径
+Yaml_include_src = $(Yaml_builder_dir)/include/yaml.hpp
+Yaml_include_dest = $(Ext)/yaml.hpp
+Yaml_lib_debug_src = $(Yaml_builder_dir)/lib/libyaml-debug.a
+Yaml_lib_debug_dest = $(Lib_dir)/libyaml-debug.a
+Yaml_lib_release_src = $(Yaml_builder_dir)/lib/libyaml.a
+Yaml_lib_release_dest = $(Lib_dir)/libyaml.a
+
+# 检查 yaml 调试版静态库和头文件是否链接
+.PHONY : check-yaml-debug
+check-yaml-debug :
+	@echo "构建YAML调试模块"
+	@$(MAKE) -C $(Yaml_builder_dir) static-lib-debug
+
+	@echo "检查YAML调试版静态库及头文件链接..."
+	@# 检查头文件目录链接是否存在
+	@if [ ! -e "$(Yaml_include_dest)" ]; then \
+		mkdir -p $(Include); \
+		ln -s ../$(Yaml_include_src) $(Yaml_include_dest); \
+		echo "YAML头文件链接创建完成"; \
 	else \
-		echo "YAML合并单头文件已存在，跳过生成"; \
+		echo "YAML头文件目录链接已存在"; \
+	fi
+	@# 检查调试版静态库链接是否存在
+	@if [ ! -e "$(Yaml_lib_debug_dest)" ]; then \
+		mkdir -p $(Lib_dir); \
+		ln -s ../$(Yaml_lib_debug_src) $(Yaml_lib_debug_dest); \
+		echo "YAML调试版静态库链接创建完成"; \
+	else \
+		echo "YAML调试版静态库链接已存在"; \
 	fi
 
-# 使用子模块构建yaml（合并单头文件版）
-.PHONY : yaml_all
-yaml_all :
-	@echo "使用yaml-cpp-builder子模块生成合并单头文件..."
-	@$(MAKE) -C $(Yaml_builder_dir) merged-header
-	@mkdir -p $(Include)
-	@ln -sf ../$(Yaml_builder_dir)/include/yaml-cpp.hpp $(Ext)/yaml-cpp.hpp
-	@echo "yaml-cpp.hpp 链接创建完成！"
+# 检查 yaml 发布版静态库和头文件是否链接
+.PHONY : check-yaml-release
+check-yaml-release :
+	@echo "构建YAML发布版模块"
+	@$(MAKE) -C $(Yaml_builder_dir) static-lib
+
+	@echo "检查YAML发布版静态库及头文件链接..."
+	@# 检查头文件目录链接是否存在
+	@if [ ! -e "$(Yaml_include_dest)" ]; then \
+		mkdir -p $(Include); \
+		ln -s ../$(Yaml_include_src) $(Yaml_include_dest); \
+		echo "YAML头文件链接创建完成"; \
+	else \
+		echo "YAML头文件目录链接已存在"; \
+	fi
+	@# 检查发布版静态库链接是否存在
+	@if [ ! -e "$(Yaml_lib_release_dest)" ]; then \
+		mkdir -p $(Lib_dir); \
+		ln -s ../$(Yaml_lib_release_src) $(Yaml_lib_release_dest); \
+		echo "YAML发布版静态库链接创建完成"; \
+	else \
+		echo "YAML发布版静态库链接已存在"; \
+	fi
+
+# 保留兼容旧流程的总检查任务
+.PHONY : check-yaml
+check-yaml : check-yaml-debug check-yaml-release
+	@echo "YAML库链接检查完成"
 
 # 清理 yaml 构建文件（调用子模块的清理目标）
 .PHONY : clean-yaml
 clean-yaml :
 	@echo "正在清理 YAML 构建文件..."
 	@$(MAKE) -C $(Yaml_builder_dir) clean
-	@if [ -L "$(Include)/yaml-cpp.hpp" ]; then \
-		rm -f $(Include)/yaml-cpp.hpp; \
-		echo "已删除 $(Include)/yaml-cpp.hpp 链接"; \
+	@if [ -L "$(Yaml_include_dest)" ]; then \
+		rm -f $(Yaml_include_dest); \
+		echo "已删除 $(Yaml_include_dest) 链接"; \
+	fi
+	@if [ -L "$(Yaml_lib_debug_dest)" ]; then \
+		rm -f $(Yaml_lib_debug_dest); \
+		echo "已删除 $(Yaml_lib_debug_dest) 链接"; \
+	fi
+	@if [ -L "$(Yaml_lib_release_dest)" ]; then \
+		rm -f $(Yaml_lib_release_dest); \
+		echo "已删除 $(Yaml_lib_release_dest) 链接"; \
 	fi
 	@echo "YAML 构建文件清理完成！"
 
@@ -117,7 +168,7 @@ yaml_to_json_obj : build/yaml_to_json.o
 
 # 调用example目录中的Makefile
 .PHONY : example
-example : yaml_to_json_obj check-yaml
+example : yaml_to_json_obj
 	@echo "正在调用example目录的Makefile构建示例程序..."
 	$(MAKE) -C example example
 
@@ -152,9 +203,6 @@ help :
 	@echo "【清理】"
 	@echo "make clean       - 清理构建文件"
 	@echo "make clean-all   - 清理所有文件，包括YAML库"
-	@echo "【YAML库】"
-	@echo "make yaml_all    - 生成yaml-cpp.hpp全合并版单头文件"
-	@echo "make clean-yaml  - 清理YAML构建文件"
 	@echo "make help        - 显示此帮助信息"
 
 # 清理
@@ -167,5 +215,5 @@ clean :
 
 # 全部清理（包括 YAML）
 .PHONY : clean-all
-clean-all : clean clean-yaml
+clean-all : clean
 	@echo "全部清理完成！"

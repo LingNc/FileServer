@@ -4,15 +4,7 @@
 #include <vector>
 #include <memory>
 #include "json.hpp"
-
-// 根据编译标志选择不同的YAML头文件
-#if defined(USE_YAML_MERGED_HEADER)
-    // 使用合并单头文件版本
-    #include "yaml-cpp.hpp"
-#else
-    // 默认使用静态库版本
-    #include "yaml.hpp"
-#endif
+#include "yaml.hpp"
 
 namespace yamjson {
     // YAML -> JSON 核心转换函数

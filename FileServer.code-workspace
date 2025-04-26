@@ -23,14 +23,15 @@
 			"*.cfg": "ini",
 			"iostream": "cpp",
 			"stdexcept": "cpp",
-			"fstream": "cpp"
+			"fstream": "cpp",
+			"ostream": "cpp"
 		}
 	},
 	"tasks": {
 		"version": "2.0.0",
 		"tasks": [
 			{
-				"label": "FileServer (开发版)",
+				"label": "FileServer",
 				"command": "make",
 				"type": "shell",
 				"args": ["main"],
@@ -43,7 +44,7 @@
 				"group": "build"
 			},
 			{
-				"label": "FileServer (生产版)",
+				"label": "FileServer-Release",
 				"command": "make",
 				"type": "shell",
 				"args": ["main-release"],
@@ -67,19 +68,6 @@
 					"reveal": "always"
 				},
 				"group": "build"
-			},
-			{
-				"label": "Build Direct Test",
-				"command": "make",
-				"type": "shell",
-				"args": ["direct-test"],
-				"problemMatcher": [
-					"$tsc"
-				],
-				"presentation": {
-					"reveal": "always"
-				},
-				"group": "build"
 			}
 		]
 	},
@@ -87,7 +75,7 @@
 		"version": "0.2.0",
 		"configurations": [
 			{
-				"name": "调试主程序(开发版)",
+				"name": "调试主程序",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "${workspaceFolder}/main",
@@ -109,10 +97,10 @@
 						"ignoreFailures": true
 					}
 				],
-				"preLaunchTask": "FileServer (开发版)"
+				"preLaunchTask": "FileServer"
 			},
 			{
-				"name": "运行主程序(生产版)",
+				"name": "运行主程序(Release)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "${workspaceFolder}/main-release",
@@ -129,7 +117,7 @@
 						"ignoreFailures": true
 					}
 				],
-				"preLaunchTask": "FileServer (生产版)"
+				"preLaunchTask": "FileServer-Release"
 			},
 			{
 				"name": "调试示例程序(YAML-JSON)",
@@ -155,26 +143,6 @@
 					}
 				],
 				"preLaunchTask": "Build Example"
-			},
-			{
-				"name": "调试直接测试程序(Direct-Test)",
-				"type": "cppdbg",
-				"request": "launch",
-				"program": "${workspaceFolder}/example/yaml_direct_test",
-				"args": [],
-				"stopAtEntry": false,
-				"cwd": "${workspaceFolder}",
-				"environment": [],
-				"externalConsole": false,
-				"MIMode": "gdb",
-				"setupCommands": [
-					{
-						"description": "为 gdb 启用整齐打印",
-						"text": "-enable-pretty-printing",
-						"ignoreFailures": true
-					}
-				],
-				"preLaunchTask": "Build Direct Test"
 			}
 		],
 		"compounds": []

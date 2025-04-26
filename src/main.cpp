@@ -11,9 +11,6 @@
 #include"loglib.hpp"
 #include"yaml_to_json.h" // 使用封装后的YAML和JSON互转库
 
-// 声明示例函数
-int yaml_json_demo();
-
 namespace fs=std::filesystem;
 using json=nlohmann::json;
 
