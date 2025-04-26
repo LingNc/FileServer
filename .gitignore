@@ -4,7 +4,7 @@
 
 # 开始
 !**/.gitignore
-!module/*
+!module/*/
 !build_yaml/*.*
 
 !include/**
