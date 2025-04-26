@@ -9,7 +9,7 @@
 #include"httplib.h"
 #include"json.hpp"
 #include"loglib.hpp"
-#include"yaml_to_json.h" // 使用封装后的YAML和JSON互转库
+#include"yamjson.h" // 使用封装后的YAML和JSON互转库
 
 namespace fs=std::filesystem;
 using json=nlohmann::json;
@@ -147,20 +147,15 @@ void handleControlRequest(const httplib::Request &req,httplib::Response &res,std
 void init(){
     //初始化配置文件
     try {
-        std::string config_content;
-        std::ifstream config_file("./config/config.yaml");
-        if (config_file.is_open()) {
-            std::stringstream buffer;
-            buffer << config_file.rdbuf();
-            config_content = buffer.str();
-            config_file.close();
+        // 使用新的from_file静态方法直接从文件加载YAML文档
+        nlohmann::yaml::document yaml_doc = nlohmann::yaml::document::from_file("./config/config.yaml");
+        // 获取解析后的JSON数据
+        config = yaml_doc.get_json();
+        console.log("配置文件解析成功");
 
-            // 使用新的 ADL 机制接口从 YAML 字符串解析为 JSON
-            nlohmann::from_yaml(config_content, config);
-            console.log("配置文件解析成功");
-        } else {
-            console.log("配置文件打开失败", loglib::ERROR);
-        }
+        // 示例：如果需要修改配置并保存回文件
+        // yaml_doc["port"] = "3001";  // 使用重载的[]运算符直接访问JSON数据
+        // yaml_doc.save();            // 保存回原文件，保留注释
     } catch (const std::exception& e) {
         console.log("配置文件解析错误: " + std::string(e.what()), loglib::ERROR);
     }
@@ -194,8 +189,6 @@ void init(){
 }
 
 int main(){
-    // 可选：运行YAML和JSON互转示例
-    // yaml_json_demo();
 
     init();
     std::string secretKey=readFileContent(SECRET_KEY_PATH);
