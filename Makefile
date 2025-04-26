@@ -7,6 +7,9 @@ Cpp_flags_release = -std=c++17 -Wall -Wextra -O3 -DNDEBUG  # 生产环境编译�
 Src = src/main.cpp src/yaml_to_json.cpp
 Obj = $(patsubst src/%.cpp,build/%.o,$(Src))
 Obj_release = $(patsubst src/%.cpp,build/%_release.o,$(Src))
+# 使用单头文件版本的目标文件
+Obj_merged = $(patsubst src/%.cpp,build/%_merged.o,$(Src))
+Obj_merged_release = $(patsubst src/%.cpp,build/%_merged_release.o,$(Src))
 
 # YAML 相关配置
 YAML_REPO = yaml-cpp
@@ -24,6 +27,10 @@ Include = include
 Ext = ext
 Lib_dir = lib
 
+# YAML库类型标志（通过-D宏定义区分两种使用方式）
+YAML_FLAGS_STATIC = -DUSE_YAML_STATIC_LIB  # 使用静态库版本
+YAML_FLAGS_MERGED = -DUSE_YAML_MERGED_HEADER  # 使用合并单头文件版本
+
 # 如果没有创建就创建build和example目录
 $(shell mkdir -p build)
 $(shell mkdir -p $(Ext))
@@ -32,44 +39,84 @@ $(shell mkdir -p example)
 
 # ====== main 主程序构建 ======
 
-# 构建 main（开发版本，带调试功能）
+# 构建 main（开发版本，带调试功能，使用静态库）
 main : $(Obj) | link check-yaml
-	@echo "正在链接开发版本（带调试功能）..."
+	@echo "正在链接开发版本（带调试功能，使用静态库版YAML）..."
 	$(Cpp) $(Cpp_flags) -o $@ $^ $(Lib)
 	@echo "开发版本构建完成！"
 
-# 构建 main-release（生产版本，优化性能）
+# 构建 main-release（生产版本，优化性能，使用静态库）
 main-release : $(Obj_release) | link check-yaml
-	@echo "正在链接生产版本（优化性能）..."
+	@echo "正在链接生产版本（优化性能，使用静态库版YAML）..."
 	$(Cpp) $(Cpp_flags_release) -o $@ $^ $(Lib_release)
 	@echo "生产版本构建完成！"
 
-# 通用规则：编译所有源文件（开发版本）
+# 构建 main-merged（开发版本，带调试功能，使用合并单头文件）
+main-merged : $(Obj_merged) | link check-yaml-all
+	@echo "正在链接开发版本（带调试功能，使用合并单头文件版YAML）..."
+	$(Cpp) $(Cpp_flags) -o $@ $^
+	@echo "开发版本(合并头文件)构建完成！"
+
+# 构建 main-merged-release（生产版本，优化性能，使用合并单头文件）
+main-merged-release : $(Obj_merged_release) | link check-yaml-all
+	@echo "正在链接生产版本（优化性能，使用合并单头文件版YAML）..."
+	$(Cpp) $(Cpp_flags_release) -o $@ $^
+	@echo "生产版本(合并头文件)构建完成！"
+
+# 通用规则：编译所有源文件（开发版本，使用静态库）
 build/%.o : src/%.cpp
-	@echo "正在编译 $< (开发版本)..."
+	@echo "正在编译 $< (开发版本，使用静态库版YAML)..."
 	@mkdir -p $(dir $@)
-	$(Cpp) $(Cpp_flags) -c $< -o $@ -I$(Include) -I$(Ext)
+	$(Cpp) $(Cpp_flags) $(YAML_FLAGS_STATIC) -c $< -o $@ -I$(Include) -I$(Ext)
 	@echo "编译完成 $@ ！"
 
-# 通用规则：编译所有源文件（生产版本）
+# 通用规则：编译所有源文件（生产版本，使用静态库）
 build/%_release.o : src/%.cpp
-	@echo "正在编译 $< (生产版本)..."
+	@echo "正在编译 $< (生产版本，使用静态库版YAML)..."
 	@mkdir -p $(dir $@)
-	$(Cpp) $(Cpp_flags_release) -c $< -o $@ -I$(Include) -I$(Ext)
+	$(Cpp) $(Cpp_flags_release) $(YAML_FLAGS_STATIC) -c $< -o $@ -I$(Include) -I$(Ext)
 	@echo "编译完成 $@ ！"
 
-# 特殊规则：编译yaml_to_json.cpp时不使用_GLIBCXX_DEBUG标志
-# build/yaml_to_json.o : src/yaml_to_json.cpp
-# 	@echo "正在编译 $< (开发版本，无调试标志)..."
-# 	@mkdir -p $(dir $@)
-# 	$(Cpp) -std=c++17 -Wall -Wextra -g -c $< -o $@ -I$(Include) -I$(Ext)
-# 	@echo "编译完成 $@ ！"
-
-# 特殊规则：编译yaml_to_json.cpp（生产版本）
-build/yaml_to_json_release.o : src/yaml_to_json.cpp
-	@echo "正在编译 $< (生产版本)..."
+# 通用规则：编译所有源文件（开发版本，使用合并单头文件）
+build/%_merged.o : src/%.cpp
+	@echo "正在编译 $< (开发版本，使用合并单头文件版YAML)..."
 	@mkdir -p $(dir $@)
-	$(Cpp) $(Cpp_flags_release) -c $< -o $@ -I$(Include) -I$(Ext)
+	$(Cpp) $(Cpp_flags) $(YAML_FLAGS_MERGED) -c $< -o $@ -I$(Include) -I$(Ext)
+	@echo "编译完成 $@ ！"
+
+# 通用规则：编译所有源文件（生产版本，使用合并单头文件）
+build/%_merged_release.o : src/%.cpp
+	@echo "正在编译 $< (生产版本，使用合并单头文件版YAML)..."
+	@mkdir -p $(dir $@)
+	$(Cpp) $(Cpp_flags_release) $(YAML_FLAGS_MERGED) -c $< -o $@ -I$(Include) -I$(Ext)
+	@echo "编译完成 $@ ！"
+
+# 特殊规则：编译yaml_to_json.cpp时不使用_GLIBCXX_DEBUG标志（静态库版）
+build/yaml_to_json.o : src/yaml_to_json.cpp
+	@echo "正在编译 $< (开发版本，无调试标志，使用静态库版YAML)..."
+	@mkdir -p $(dir $@)
+	$(Cpp) -std=c++17 -Wall -Wextra -g $(YAML_FLAGS_STATIC) -c $< -o $@ -I$(Include) -I$(Ext)
+	@echo "编译完成 $@ ！"
+
+# 特殊规则：编译yaml_to_json.cpp（生产版本，静态库版）
+build/yaml_to_json_release.o : src/yaml_to_json.cpp
+	@echo "正在编译 $< (生产版本，使用静态库版YAML)..."
+	@mkdir -p $(dir $@)
+	$(Cpp) $(Cpp_flags_release) $(YAML_FLAGS_STATIC) -c $< -o $@ -I$(Include) -I$(Ext)
+	@echo "编译完成 $@ ！"
+
+# 特殊规则：编译yaml_to_json.cpp时不使用_GLIBCXX_DEBUG标志（合并单头文件版）
+build/yaml_to_json_merged.o : src/yaml_to_json.cpp
+	@echo "正在编译 $< (开发版本，无调试标志，使用合并单头文件版YAML)..."
+	@mkdir -p $(dir $@)
+	$(Cpp) -std=c++17 -Wall -Wextra -g $(YAML_FLAGS_MERGED) -c $< -o $@ -I$(Include) -I$(Ext)
+	@echo "编译完成 $@ ！"
+
+# 特殊规则：编译yaml_to_json.cpp（生产版本，合并单头文件版）
+build/yaml_to_json_merged_release.o : src/yaml_to_json.cpp
+	@echo "正在编译 $< (生产版本，使用合并单头文件版YAML)..."
+	@mkdir -p $(dir $@)
+	$(Cpp) $(Cpp_flags_release) $(YAML_FLAGS_MERGED) -c $< -o $@ -I$(Include) -I$(Ext)
 	@echo "编译完成 $@ ！"
 
 # 复制子模块的头文件到include位置
@@ -97,6 +144,17 @@ check-yaml :
 		$(MAKE) yaml_header; \
 	else \
 		echo "YAML头文件和库已存在，跳过生成"; \
+	fi
+
+# 检查 yaml-cpp.hpp 是否存在（合并单头文件版）
+.PHONY : check-yaml-all
+check-yaml-all :
+	@echo "检查YAML合并单头文件是否存在..."
+	@if [ ! -f "$(Ext)/yaml-cpp.hpp" ]; then \
+		echo "YAML合并单头文件不存在，需要生成"; \
+		$(MAKE) yaml_all; \
+	else \
+		echo "YAML合并单头文件已存在，跳过生成"; \
 	fi
 
 # 检查 yaml-cpp 仓库是否存在，不存在则下载
@@ -182,26 +240,43 @@ clean-yaml-git :
 
 # ====== 示例程序目标 ======
 
-# yaml_to_json 目标文件（供示例程序使用）
+# yaml_to_json 目标文件（供示例程序使用，静态库版）
 .PHONY : yaml_to_json_obj
 yaml_to_json_obj : build/yaml_to_json.o
 	@echo "确保 yaml_to_json.o 已构建完成"
 
-# 调用example目录中的Makefile
+# yaml_to_json 目标文件（供示例程序使用，合并单头文件版）
+.PHONY : yaml_to_json_merged_obj
+yaml_to_json_merged_obj : build/yaml_to_json_merged.o
+	@echo "确保 yaml_to_json_merged.o 已构建完成"
+
+# 调用example目录中的Makefile（使用静态库版）
 .PHONY : example
 example : yaml_to_json_obj check-yaml
-	@echo "正在调用example目录的Makefile构建示例程序..."
-	$(MAKE) -C example example
+	@echo "正在调用example目录的Makefile构建示例程序（静态库版）..."
+	$(MAKE) -C example YAML_TYPE=static example
 
-# 运行示例程序
+# 调用example目录中的Makefile（使用合并单头文件版）
+.PHONY : example-merged
+example-merged : yaml_to_json_merged_obj check-yaml-all
+	@echo "正在调用example目录的Makefile构建示例程序（合并单头文件版）..."
+	$(MAKE) -C example YAML_TYPE=merged example
+
+# 运行示例程序（静态库版）
 .PHONY : run-example
 run-example : example
-	@echo "正在调用example目录的Makefile运行示例程序..."
-	$(MAKE) -C example run-example
+	@echo "正在调用example目录的Makefile运行示例程序（静态库版）..."
+	$(MAKE) -C example YAML_TYPE=static run-example
 
-# 其他示例程序目标
-.PHONY : simple-test run-simple-test minimal-test run-minimal-test direct-test run-direct-test
-simple-test run-simple-test minimal-test run-minimal-test direct-test run-direct-test:
+# 运行示例程序（合并单头文件版）
+.PHONY : run-example-merged
+run-example-merged : example-merged
+	@echo "正在调用example目录的Makefile运行示例程序（合并单头文件版）..."
+	$(MAKE) -C example YAML_TYPE=merged run-example
+
+# 直接测试程序目标
+.PHONY : direct-test run-direct-test
+direct-test run-direct-test:
 	@echo "正在调用example目录的Makefile运行 $@..."
 	$(MAKE) -C example $@
 
@@ -213,17 +288,26 @@ simple-test run-simple-test minimal-test run-minimal-test direct-test run-direct
 help :
 	@echo "FileServer Makefile 帮助"
 	@echo "------------------------"
-	@echo "make             - 构建主程序（开发版本，带调试功能）"
-	@echo "make main        - 构建主程序（开发版本，带调试功能）"
-	@echo "make main-release- 构建主程序（生产版本，优化性能）"
-	@echo "make example     - 构建YAML-JSON示例程序"
-	@echo "make run-example - 运行YAML-JSON示例程序"
-	@echo "make simple-test - 构建简化测试程序"
-	@echo "make minimal-test- 构建最小测试程序"
+	@echo "【静态库版本】"
+	@echo "make             - 构建主程序（开发版本，带调试功能，使用静态库版YAML）"
+	@echo "make main        - 构建主程序（开发版本，带调试功能，使用静态库版YAML）"
+	@echo "make main-release- 构建主程序（生产版本，优化性能，使用静态库版YAML）"
+	@echo "【合并单头文件版本】"
+	@echo "make main-merged - 构建主程序（开发版本，带调试功能，使用合并单头文件版YAML）"
+	@echo "make main-merged-release - 构建主程序（生产版本，优化性能，使用合并单头文件版YAML）"
+	@echo "【示例程序】"
+	@echo "make example     - 构建YAML-JSON示例程序（静态库版）"
+	@echo "make example-merged - 构建YAML-JSON示例程序（合并单头文件版）"
+	@echo "make run-example - 运行YAML-JSON示例程序（静态库版）"
+	@echo "make run-example-merged - 运行YAML-JSON示例程序（合并单头文件版）"
 	@echo "make direct-test - 构建直接使用YAML-CPP的测试程序"
+	@echo "make run-direct-test - 运行直接使用YAML-CPP的测试程序"
+	@echo "【清理】"
 	@echo "make clean       - 清理构建文件"
 	@echo "make clean-all   - 清理所有文件，包括YAML库"
-	@echo "make yaml_header - 仅生成yaml.hpp单头文件"
+	@echo "【YAML库】"
+	@echo "make yaml_header - 生成yaml.hpp单头文件+静态库(含调试版)"
+	@echo "make yaml_header_no_debug - 生成yaml.hpp单头文件+静态库(不含调试版)"
 	@echo "make yaml_all    - 生成yaml-cpp.hpp全合并版"
 	@echo "make clean-yaml  - 清理YAML构建文件"
 	@echo "make clean-yaml-git - 清理YAML仓库"
@@ -233,7 +317,7 @@ help :
 .PHONY : clean
 clean :
 	@echo "正在清理..."
-	rm -f build/*.o build/*_release.o main main-release
+	rm -f build/*.o build/*_release.o build/*_merged.o build/*_merged_release.o main main-release main-merged main-merged-release
 	$(MAKE) -C example clean
 	@echo "清理完成！"
 

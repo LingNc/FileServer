@@ -17,6 +17,8 @@
 !src/*.cpp
 !config/config.yaml
 
+!tools/*.py
+
 !FileServer.code-workspace
 !Makefile
 !LICENSE

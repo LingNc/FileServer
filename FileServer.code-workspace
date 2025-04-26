@@ -67,6 +67,19 @@
 					"reveal": "always"
 				},
 				"group": "build"
+			},
+			{
+				"label": "Build Direct Test",
+				"command": "make",
+				"type": "shell",
+				"args": ["direct-test"],
+				"problemMatcher": [
+					"$tsc"
+				],
+				"presentation": {
+					"reveal": "always"
+				},
+				"group": "build"
 			}
 		]
 	},
@@ -114,11 +127,6 @@
 						"description": "为 gdb 启用整齐打印",
 						"text": "-enable-pretty-printing",
 						"ignoreFailures": true
-					},
-					{
-						"description": "加载nlohmann-json美化输出脚本",
-						"text": "source ${workspaceFolder}/tools/nlohmann-json.py",
-						"ignoreFailures": true
 					}
 				],
 				"preLaunchTask": "FileServer (生产版)"
@@ -147,6 +155,26 @@
 					}
 				],
 				"preLaunchTask": "Build Example"
+			},
+			{
+				"name": "调试直接测试程序(Direct-Test)",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder}/example/yaml_direct_test",
+				"args": [],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder}",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [
+					{
+						"description": "为 gdb 启用整齐打印",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					}
+				],
+				"preLaunchTask": "Build Direct Test"
 			}
 		],
 		"compounds": []
