@@ -119,20 +119,4 @@ std::string json_to_yaml(const nlohmann::json &j){
     }
 }
 
-// 集成到 nlohmann 的序列化系统
-template <typename T>
-T from_yaml(const std::string &yaml_str){
-    return yaml_to_json(yaml_str).get<T>();
-}
-
-template <typename T>
-std::string to_yaml(const T &value){
-    nlohmann::json j=value;
-    return json_to_yaml(j);
-}
-
-// 显式实例化常用模板（可选，根据需要添加）
-// template int from_yaml<int>(const std::string&);
-// template std::string to_yaml<int>(const int&);
-
 } // namespace yamjson
